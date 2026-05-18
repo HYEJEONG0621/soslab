@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SOS랩 관리자 🛡️</title>
+<!-- Firebase SDK를 가장 먼저 로드 -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --p:#7C5CBF;--pd:#5A3F9A;--pl:#A98FD8;
+  --mint:#2EC4A0;--coral:#FF7B7B;--blue:#4A90D9;--warn:#FFB347;
+  --bg:#F7F4FF;--card:#fff;--bdr:#E8E4F4;
+  --tx:#2D2B3D;--mid:#6B6880;--lt:#A8A5BB;
+  --sh:0 4px 20px rgba(124,92,191,.12);
+  --r:14px;--rs:10px;--rxs:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
+
+/* LOGIN */
+.lw{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#5A3F9A,#A98FD8);}
+.lc{background:#fff;border-radius:22px;padding:36px;width:340px;
+  box-shadow:0 20px 60px rgba(0,0,0,.22);text-align:center;}
+.lc h1{font-size:20px;font-weight:900;color:var(--p);margin:10px 0 5px;}
+.lc p{font-size:13px;color:var(--mid);margin-bottom:20px;}
+.fi{width:100%;border:1.5px solid var(--bdr);border-radius:var(--rxs);
+  padding:10px 13px;font-size:13px;outline:none;font-family:inherit;
+  background:#faf9ff;transition:border-color .17s;margin-bottom:8px;}
+.fi:focus{border-color:var(--p);}
+.btn{border:none;border-radius:var(--rs);padding:10px 17px;font-size:13px;
+  font-weight:700;cursor:pointer;font-family:inherit;transition:all .17s;}
+.bp{background:var(--p);color:#fff;width:100%;}
+.bp:hover{background:var(--pd);}
+.bs{background:#e8e4f4;color:var(--pd);}
+.bs:hover{background:#d4c8f5;}
+.bd{background:#ffe0e0;color:#c0392b;}
+.bg2{background:#d4f5e9;color:#0f6b4a;}
+.bsm{padding:5px 11px;font-size:12px;}
+.err{color:#c0392b;font-size:13px;min-height:18px;margin-top:5px;}
+
+/* LAYOUT */
+.app{display:none;}
+.top{background:linear-gradient(90deg,var(--pd),var(--p));height:52px;
+  display:flex;align-items:center;padding:0 22px;gap:13px;
+  box-shadow:0 2px 12px rgba(90,63,154,.3);}
+.tlogo{font-size:17px;font-weight:900;color:#fff;display:flex;align-items:center;gap:7px;}
+.tbdg{background:rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;}
+.tout{border:1.5px solid rgba(255,255,255,.33);background:none;color:#fff;
+  font-size:12px;font-weight:700;padding:4px 12px;border-radius:7px;
+  cursor:pointer;font-family:inherit;margin-left:auto;}
+.tout:hover{background:rgba(255,255,255,.14);}
+.content{padding:20px;max-width:1080px;margin:0 auto;}
+
+/* TABS */
+.tabs{display:flex;gap:7px;margin-bottom:17px;flex-wrap:wrap;}
+.tab{border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 15px;
+  font-size:13px;font-weight:700;cursor:pointer;background:#fff;
+  color:var(--mid);font-family:inherit;transition:all .17s;}
+.tab.on{background:var(--p);color:#fff;border-color:var(--p);}
+
+/* CARD */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:17px;margin-bottom:14px;}
+.ct{font-size:14px;font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:6px;}
+
+/* STAT */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+.sc{background:var(--card);border-radius:var(--rs);padding:13px;
+  box-shadow:var(--sh);text-align:center;border-top:3px solid var(--c,var(--p));}
+.sn{font-size:25px;font-weight:900;color:var(--c,var(--p));}
+.sl{font-size:11px;color:var(--mid);margin-top:2px;}
+.ss{font-size:10px;color:var(--lt);margin-top:1px;}
+
+/* TABLE */
+.dt{width:100%;border-collapse:collapse;font-size:13px;}
+.dt th{background:var(--p);color:#fff;padding:9px 11px;text-align:left;
+  font-size:12px;font-weight:700;white-space:nowrap;}
+.dt th:first-child{border-radius:9px 0 0 0;}
+.dt th:last-child{border-radius:0 9px 0 0;}
+.dt td{border-bottom:1px solid var(--bdr);padding:9px 11px;vertical-align:middle;}
+.dt tr:last-child td{border-bottom:none;}
+.dt tr:hover td{background:#faf8ff;}
+
+/* BADGE */
+.bg{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.bgp{background:#e8e4f4;color:var(--pd);}
+.bgm{background:#d4f5e9;color:#0f6b4a;}
+.bgo{background:#ffe8d6;color:#a04400;}
+.bgb{background:#e8f4ff;color:#0d5fa5;}
+.bgy{background:#fff3d4;color:#a06a00;}
+
+/* FILTER */
+.fbar{display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center;}
+.si{border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 12px;
+  font-size:13px;outline:none;font-family:inherit;background:#fff;flex:1;min-width:160px;}
+.si:focus{border-color:var(--p);}
+.fsel{border:1.5px solid var(--bdr);border-radius:var(--rs);padding:7px 10px;
+  font-size:13px;outline:none;font-family:inherit;background:#fff;cursor:pointer;}
+
+/* PROGRESS */
+.pb{height:5px;background:#f0ecff;border-radius:5px;overflow:hidden;margin-top:3px;}
+.pf{height:100%;border-radius:5px;background:var(--p);transition:width .6s;}
+
+/* CLASS CODE CARD */
+.cc-item{display:flex;align-items:center;gap:10px;padding:11px 14px;
+  background:#f9f7ff;border-radius:var(--rs);margin:6px 0;border-left:4px solid var(--p);}
+.cc-code{font-size:15px;font-weight:900;color:var(--p);min-width:100px;}
+.cc-name{font-size:13px;font-weight:600;flex:1;}
+.cc-count{font-size:12px;color:var(--mid);}
+.cc-acts{display:flex;gap:5px;}
+
+/* DRAWER */
+.dov{position:fixed;inset:0;background:rgba(45,43,61,.44);z-index:200;
+  display:none;align-items:flex-start;justify-content:flex-end;}
+.drawer{background:#fff;width:430px;min-height:100vh;padding:24px 21px;
+  overflow-y:auto;box-shadow:-6px 0 28px rgba(90,63,154,.2);}
+.dr-hd{display:flex;align-items:center;gap:9px;margin-bottom:17px;}
+.dr-cls{margin-left:auto;border:none;background:#ffe0e0;border-radius:7px;
+  padding:5px 11px;cursor:pointer;font-size:13px;font-weight:700;color:#c0392b;font-family:inherit;}
+.sec-lbl{font-size:10px;font-weight:700;color:var(--lt);text-transform:uppercase;
+  letter-spacing:.05em;margin:13px 0 7px;}
+.ir{display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid var(--bdr);font-size:13px;}
+.ir:last-child{border-bottom:none;}
+.ik{color:var(--mid);}
+.iv{font-weight:700;}
+.ie{border:none;background:none;font-family:inherit;font-size:13px;color:var(--tx);
+  width:100%;outline:none;border-bottom:1.5px dashed transparent;transition:border-color .17s;}
+.ie:focus{border-bottom-color:var(--p);background:#f4f0ff;border-radius:4px;padding:1px 4px;}
+
+/* CONFIRM MODAL */
+.mov{position:fixed;inset:0;background:rgba(45,43,61,.46);z-index:300;
+  display:none;align-items:center;justify-content:center;}
+.mbox{background:#fff;border-radius:18px;padding:26px;max-width:340px;width:90%;
+  box-shadow:0 14px 44px rgba(0,0,0,.18);text-align:center;}
+.mbox h3{font-size:16px;font-weight:900;margin-bottom:7px;}
+.mbox p{font-size:13px;color:var(--mid);margin-bottom:17px;line-height:1.6;}
+.mbts{display:flex;gap:7px;justify-content:center;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--p);color:#fff;
+  padding:10px 16px;border-radius:var(--rs);font-size:13px;font-weight:600;
+  z-index:9999;box-shadow:var(--sh);display:none;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+ <div class="lw">
+  <div class="lc">
+   <div style="font-size:44px;">🛡️</div>
+   <h1>SOS랩 관리자</h1>
+   <p>선생님만 접근할 수 있는 관리 페이지예요.</p>
+   <input type="password" class="fi" id="pw" placeholder="관리자 비밀번호 입력"
+     onkeydown="if(event.key==='Enter')doLogin()">
+   <button class="btn bp" onclick="doLogin()">🔓 로그인</button>
+   <div class="err" id="lerr"></div>
+  </div>
+ </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="admin-app">
+ <div class="top">
+  <div class="tlogo">🛡️ SOS랩 관리자 <span class="tbdg">ADMIN</span></div>
+  <button class="tout" onclick="doLogout()">로그아웃</button>
+ </div>
+ <div class="content">
+  <div class="tabs">
+   <button class="tab on" onclick="switchTab('ov',this)">📊 전체 현황</button>
+   <button class="tab" onclick="switchTab('codes',this)">🏫 반코드 관리</button>
+   <button class="tab" onclick="switchTab('st',this)">👥 학생 관리</button>
+   <button class="tab" onclick="switchTab('cl',this)">📈 반별 통계</button>
+  </div>
+
+  <!-- ── OVERVIEW ── -->
+  <div id="tab-ov">
+   <div class="g4">
+    <div class="sc" style="--c:var(--p);"><div class="sn" id="ov-total">0</div><div class="sl">전체 학생 수 👥</div></div>
+    <div class="sc" style="--c:var(--mint);"><div class="sn" id="ov-active">0</div><div class="sl">오늘 접속 학생 📱</div></div>
+    <div class="sc" style="--c:var(--coral);"><div class="sn" id="ov-avg">0분</div><div class="sl">평균 공부 시간 ⏱</div></div>
+    <div class="sc" style="--c:var(--blue);"><div class="sn" id="ov-pomo">0개</div><div class="sl">평균 뽀모도로 🍅</div></div>
+   </div>
+   <div class="g2">
+    <div class="card">
+     <div class="ct">📈 오늘 공부 시간 TOP 5</div>
+     <div id="ov-top5"><p style="color:var(--lt);font-size:13px;">데이터 없음</p></div>
+    </div>
+    <div class="card">
+     <div class="ct">🏫 반별 평균 공부 시간</div>
+     <div id="ov-class"><p style="color:var(--lt);font-size:13px;">데이터 없음</p></div>
+    </div>
+   </div>
+   <div class="card">
+    <div class="ct">⚠️ 오늘 미접속 학생</div>
+    <div id="ov-inactive"><p style="color:var(--lt);font-size:13px;">없음</p></div>
+   </div>
+  </div>
+
+  <!-- ── CLASS CODES ── -->
+  <div id="tab-codes" style="display:none;">
+   <div class="card">
+    <div class="ct">🏫 반코드 만들기</div>
+    <p style="font-size:13px;color:var(--mid);margin-bottom:13px;">
+     선생님이 반코드를 미리 만들어두면, 학생들이 앱에서 반코드를 선택해서 반에 참여할 수 있어요!
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+     <div style="flex:1;min-width:120px;">
+      <label style="font-size:12px;font-weight:700;color:var(--mid);display:block;margin-bottom:4px;">반코드 (영문+숫자)</label>
+      <input type="text" class="fi" id="new-code" placeholder="예: CLASS2024, 3학년2반" style="text-transform:uppercase;margin-bottom:0;">
+     </div>
+     <div style="flex:1.5;min-width:150px;">
+      <label style="font-size:12px;font-weight:700;color:var(--mid);display:block;margin-bottom:4px;">반 이름 (학생에게 표시)</label>
+      <input type="text" class="fi" id="new-code-name" placeholder="예: 3학년 2반, 수학 스터디" style="margin-bottom:0;">
+     </div>
+     <div style="display:flex;align-items:flex-end;">
+      <button class="btn bp" onclick="addClassCode()">＋ 반코드 추가</button>
+     </div>
+    </div>
+   </div>
+
+   <div class="card">
+    <div class="ct">📋 등록된 반코드 목록</div>
+    <div id="code-list">
+     <p style="color:var(--lt);font-size:13px;text-align:center;padding:16px;">아직 등록된 반코드가 없어요. 위에서 추가해보세요!</p>
+    </div>
+   </div>
+
+   <div class="card" style="background:#fff8f0;border:1.5px solid #ffd480;">
+    <div class="ct" style="color:#a06a00;">💡 반코드 사용 방법</div>
+    <ol style="font-size:13px;color:var(--mid);line-height:2.2;padding-left:18px;">
+     <li>위에서 반코드와 반 이름을 입력하고 <strong>반코드 추가</strong> 버튼을 눌러요</li>
+     <li>학생들에게 반코드를 알려주거나, 학생들이 앱에서 <strong>🏫 반 입장</strong>을 누르면 선생님이 만든 반코드 목록이 자동으로 나타나요</li>
+     <li>학생들이 반코드를 선택하면 우리 반 랭킹에 참여할 수 있어요</li>
+     <li>이 페이지의 <strong>반별 통계</strong> 탭에서 반별 공부 현황을 확인할 수 있어요</li>
+    </ol>
+   </div>
+  </div>
+
+  <!-- ── STUDENTS ── -->
+  <div id="tab-st" style="display:none;">
+   <div class="fbar">
+    <input type="text" class="si" id="s-search" placeholder="🔍 이름으로 검색..." oninput="filterStudents()">
+    <select class="fsel" id="s-class" onchange="filterStudents()">
+     <option value="">전체 반</option>
+    </select>
+    <select class="fsel" id="s-grade" onchange="filterStudents()">
+     <option value="">전체 학교 급</option>
+     <option>초등 고학년</option><option>중학생</option><option>고등학생</option>
+    </select>
+    <button class="btn bs bsm" onclick="confirmBulkReset()">🗑 선택 초기화</button>
+    <button class="btn bs bsm" onclick="exportCSV()">📥 CSV 내보내기</button>
+   </div>
+   <div class="card" style="padding:0;overflow:hidden;">
+    <table class="dt" id="st-table">
+     <thead>
+      <tr>
+       <th><input type="checkbox" id="chk-all" onchange="toggleAll()"></th>
+       <th>이름</th><th>반코드</th><th>학교 급</th>
+       <th>오늘 공부(분)</th><th>뽀모도로</th><th>마지막 접속</th><th>관리</th>
+      </tr>
+     </thead>
+     <tbody id="st-body"></tbody>
+    </table>
+   </div>
+  </div>
+
+  <!-- ── CLASS STATS ── -->
+  <div id="tab-cl" style="display:none;">
+   <div class="card">
+    <div class="ct">🏫 반 선택</div>
+    <div id="cl-btns" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:3px;"></div>
+   </div>
+   <div id="cl-detail"></div>
+  </div>
+
+ </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- STUDENT DRAWER -->
+<div class="dov" id="drawer-ov" onclick="closeDrawer()">
+ <div class="drawer" onclick="event.stopPropagation()">
+  <div class="dr-hd">
+   <div style="font-size:26px;">🐻</div>
+   <div>
+    <div style="font-size:16px;font-weight:900;" id="dr-name">-</div>
+    <div style="font-size:12px;color:var(--mid);" id="dr-meta">-</div>
+   </div>
+   <button class="dr-cls" onclick="closeDrawer()">✕ 닫기</button>
+  </div>
+
+  <div class="sec-lbl">📊 오늘 학습 현황</div>
+  <div id="dr-today"></div>
+
+  <div class="sec-lbl" style="display:flex;align-items:center;justify-content:space-between;">
+   <span>✏️ 공부 시간 수정</span>
+  </div>
+  <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+   <div>
+    <label style="font-size:11px;color:var(--mid);display:block;margin-bottom:3px;">공부 시간(분)</label>
+    <input type="number" class="fi" id="edit-min" style="max-width:90px;margin-bottom:0;" placeholder="0">
+   </div>
+   <div>
+    <label style="font-size:11px;color:var(--mid);display:block;margin-bottom:3px;">뽀모도로(개)</label>
+    <input type="number" class="fi" id="edit-pomo" style="max-width:90px;margin-bottom:0;" placeholder="0">
+   </div>
+   <div style="display:flex;align-items:flex-end;gap:5px;">
+    <button class="btn bp bsm" onclick="saveStudentEdit()" style="margin-top:18px;">💾 저장</button>
+    <button class="btn bd bsm" onclick="confirmResetCurrent()" style="margin-top:18px;">🗑 초기화</button>
+   </div>
+  </div>
+
+  <div class="sec-lbl">🎯 목표 정보</div>
+  <div id="dr-goals"></div>
+
+  <div class="sec-lbl">📚 등록 과목</div>
+  <div id="dr-subjects"></div>
+
+  <div class="sec-lbl">📔 최근 성찰 일지</div>
+  <div id="dr-journals"></div>
+ </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="mov" id="confirm-mov">
+ <div class="mbox">
+  <h3 id="m-title">확인</h3>
+  <p id="m-desc"></p>
+  <div class="mbts">
+   <button class="btn bs bsm" onclick="closeModal()">취소</button>
+   <button class="btn bd bsm" id="m-ok">확인</button>
+  </div>
+ </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ──────────────────────────────────
+   비밀번호 (프론트엔드 직접 검증)
+   ────────────────────────────────── */
+var ADMIN_PW = 'admin2026';
+
+/* ── State ── */
+var allStudents = [];
+var filtered    = [];
+var currentSt   = null;
+var modalCb     = null;
+
+/* ── Login ── */
+function doLogin() {
+  var pw  = document.getElementById('pw').value;
+  var err = document.getElementById('lerr');
+  err.textContent = '';
+  if (!pw) { err.textContent = '비밀번호를 입력해주세요.'; return; }
+  if (pw === ADMIN_PW) {
+    sessionStorage.setItem('adm', btoa(pw));
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'block';
+    loadData();
+  } else {
+    err.textContent = '비밀번호가 틀렸어요. 다시 확인해주세요.';
+    document.getElementById('pw').value = '';
+    document.getElementById('pw').focus();
+  }
+}
+function doLogout() { sessionStorage.removeItem('adm'); location.reload(); }
+
+/* ── Load student data from Firebase or localStorage ── */
+function loadData() {
+  allStudents = [];
+  if (adminDb) {
+    // Firebase에서 전체 학생 데이터 읽기
+    adminDb.ref('students').once('value').then(function(snapshot) {
+      snapshot.forEach(function(classSnap) {
+        var classCode = classSnap.key;
+        classSnap.forEach(function(studentSnap) {
+          var v = studentSnap.val();
+          allStudents.push({
+            id:        v.name + '_' + classCode,
+            name:      v.name      || studentSnap.key,
+            classCode: classCode,
+            grade:     v.grade     || '-',
+            min:       v.min       || 0,
+            pomo:      v.pomo      || 0,
+            date:      v.date      || '-',
+            ts:        v.ts        || 0
+          });
+        });
+      });
+      filtered = allStudents.slice();
+      renderOverview(); renderStudents(); renderClassTab(); renderCodeList();
+      // 실시간 변경 감지
+      adminDb.ref('students').on('value', function(snap) {
+        allStudents = [];
+        snap.forEach(function(cSnap) {
+          var cc = cSnap.key;
+          cSnap.forEach(function(sSnap) {
+            var v = sSnap.val();
+            allStudents.push({id:v.name+'_'+cc,name:v.name||sSnap.key,classCode:cc,grade:v.grade||'-',min:v.min||0,pomo:v.pomo||0,date:v.date||'-',ts:v.ts||0});
+          });
+        });
+        filtered = allStudents.slice();
+        renderOverview(); renderStudents(); renderClassTab();
+      });
+    }).catch(function(e) {
+      console.log('Firebase read error:', e.message);
+      loadFromLocalStorage(); // 폴백
+    });
+  } else {
+    loadFromLocalStorage();
+  }
+}
+
+function loadFromLocalStorage() {
+  allStudents = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (!key || !key.startsWith('classdata_')) continue;
+    var code = key.replace('classdata_', '');
+    try {
+      var members = JSON.parse(localStorage.getItem(key) || '[]');
+      members.forEach(function (m) {
+        allStudents.push({
+          id: m.name + '_' + code, name: m.name, classCode: code,
+          grade: m.grade || '-', min: m.min || 0, pomo: m.pomo || 0,
+          date: m.date || '-', ts: m.ts || 0
+        });
+      });
+    } catch (e) {}
+  }
+  filtered = allStudents.slice();
+  renderOverview(); renderStudents(); renderClassTab(); renderCodeList();
+}
+
+/* ══════════════════════════════════
+   CLASS CODE MANAGEMENT
+══════════════════════════════════ */
+function getClassCodes() {
+  try { return JSON.parse(localStorage.getItem('admin_class_codes') || '[]'); } catch (e) { return []; }
+}
+function saveClassCodes(codes) {
+  localStorage.setItem('admin_class_codes', JSON.stringify(codes));
+}
+
+function addClassCode() {
+  var code = document.getElementById('new-code').value.trim().toUpperCase().replace(/\s/g,'');
+  var name = document.getElementById('new-code-name').value.trim();
+  if (!code) { toast('⚠️ 반코드를 입력해주세요!'); return; }
+  if (!name) { toast('⚠️ 반 이름을 입력해주세요!'); return; }
+
+  if (adminDb) {
+    // Firebase에 저장 → 학생 앱에서 실시간으로 반영됨
+    adminDb.ref('classes/' + code).set({
+      name:    name,
+      created: new Date().toLocaleDateString('ko-KR')
+    }).then(function() {
+      document.getElementById('new-code').value      = '';
+      document.getElementById('new-code-name').value = '';
+      renderCodeList();
+      toast('✅ ' + code + ' (' + name + ') 반코드가 Firebase에 저장됐어요! 학생들이 바로 선택할 수 있어요 🎉');
+    }).catch(function(e) { toast('❌ 저장 실패: ' + e.message); });
+  } else {
+    // Firebase 미연결: localStorage 폴백
+    var codes = getClassCodes();
+    if (codes.find(function (c) { return c.code === code; })) { toast('⚠️ 이미 존재하는 반코드예요!'); return; }
+    codes.push({ code: code, name: name, created: new Date().toLocaleDateString('ko-KR') });
+    saveClassCodes(codes);
+    document.getElementById('new-code').value      = '';
+    document.getElementById('new-code-name').value = '';
+    renderCodeList();
+    toast('✅ ' + code + ' (' + name + ') 반코드가 추가됐어요!');
+  }
+}
+
+function renderCodeList() {
+  var el = document.getElementById('code-list'); if (!el) return;
+
+  var renderCodes = function(codes) {
+    if (!codes.length) {
+      el.innerHTML = '<p style="color:var(--lt);font-size:13px;text-align:center;padding:16px;">아직 등록된 반코드가 없어요. 위에서 추가해보세요!</p>';
+      return;
+    }
+    el.innerHTML = codes.map(function (c, i) {
+      var members = [];
+      try { members = JSON.parse(localStorage.getItem('classdata_' + c.code) || '[]'); } catch (e) {}
+      var today  = new Date().toDateString();
+      var active = members.filter(function (m) { return m.date === today; }).length;
+      return '<div class="cc-item">'
+        + '<div class="cc-code">' + c.code + '</div>'
+        + '<div class="cc-name">' + c.name + '</div>'
+        + '<div class="cc-count">🗓 ' + (c.created||'') + ' · 오늘 ' + active + '명</div>'
+        + '<div class="cc-acts">'
+        + '<button class="btn bs bsm" onclick="viewCodeDetail(\'' + c.code + '\')">📊 현황</button>'
+        + '<button class="btn bd bsm" onclick="confirmDeleteCode(\'' + c.code + '\')">삭제</button>'
+        + '</div></div>';
+    }).join('');
+  };
+
+  if (adminDb) {
+    adminDb.ref('classes').once('value').then(function(snapshot) {
+      var codes = [];
+      snapshot.forEach(function(child) {
+        codes.push({ code: child.key, name: child.val().name||child.key, created: child.val().created||'' });
+      });
+      renderCodes(codes);
+    }).catch(function() { renderCodes(getClassCodes()); });
+  } else {
+    renderCodes(getClassCodes());
+  }
+}
+
+function confirmDeleteCode(code) {
+  showModal('반코드를 삭제할까요?',
+    '"' + code + '" 반코드를 삭제해요. 학생 데이터는 유지돼요.',
+    function () {
+      if (adminDb) {
+        adminDb.ref('classes/' + code).remove().then(function() {
+          renderCodeList(); closeModal(); toast('🗑 반코드가 삭제됐어요!');
+        });
+      } else {
+        var codes = getClassCodes().filter(function(c){ return c.code !== code; });
+        saveClassCodes(codes);
+        renderCodeList(); closeModal(); toast('🗑 반코드가 삭제됐어요!');
+      }
+    });
+}
+
+function viewCodeDetail(code) {
+  switchTab('cl', document.querySelector('.tab:nth-child(4)'));
+  setTimeout(function () { showClass(code); }, 100);
+}
+
+/* ══════════════════════════════════
+   OVERVIEW
+══════════════════════════════════ */
+function renderOverview() {
+  var today  = new Date().toDateString();
+  var active = allStudents.filter(function (s) { return s.date === today; });
+  var avgMin = active.length ? Math.round(active.reduce(function (a, s) { return a + (s.min || 0); }, 0) / active.length) : 0;
+  var avgPm  = active.length ? (active.reduce(function (a, s) { return a + (s.pomo || 0); }, 0) / active.length).toFixed(1) : 0;
+
+  document.getElementById('ov-total').textContent  = allStudents.length;
+  document.getElementById('ov-active').textContent = active.length;
+  document.getElementById('ov-avg').textContent    = avgMin + '분';
+  document.getElementById('ov-pomo').textContent   = avgPm + '개';
+
+  /* TOP 5 */
+  var sorted = active.slice().sort(function (a, b) { return (b.min || 0) - (a.min || 0); }).slice(0, 5);
+  var maxM   = sorted.length ? (sorted[0].min || 1) : 1;
+  var medals = ['🥇', '🥈', '🥉', '4위', '5위'];
+  document.getElementById('ov-top5').innerHTML = sorted.length
+    ? sorted.map(function (s, i) {
+        var w = Math.round((s.min || 0) / maxM * 100);
+        return '<div style="display:flex;align-items:center;gap:9px;margin:7px 0;">'
+          + '<div style="width:22px;font-weight:900;color:var(--p);">' + medals[i] + '</div>'
+          + '<div style="flex:1;"><div style="font-size:13px;font-weight:600;">' + s.name
+          + ' <span style="font-size:11px;color:var(--lt);">' + s.classCode + '</span></div>'
+          + '<div class="pb"><div class="pf" style="width:' + w + '%;"></div></div></div>'
+          + '<div style="font-size:13px;font-weight:700;color:var(--p);">' + s.min + '분</div></div>';
+      }).join('')
+    : '<p style="color:var(--lt);font-size:13px;">오늘 공부한 학생이 없어요</p>';
+
+  /* 반별 */
+  var codes = [];
+  allStudents.forEach(function (s) { if (codes.indexOf(s.classCode) < 0) codes.push(s.classCode); });
+  var cas   = codes.map(function (c) {
+    var mem = active.filter(function (s) { return s.classCode === c; });
+    return { code: c, avg: mem.length ? Math.round(mem.reduce(function (a, s) { return a + (s.min || 0); }, 0) / mem.length) : 0 };
+  }).sort(function (a, b) { return b.avg - a.avg; });
+  var maxA  = cas.length ? (cas[0].avg || 1) : 1;
+  document.getElementById('ov-class').innerHTML = cas.length
+    ? cas.map(function (c) {
+        var w = Math.round(c.avg / maxA * 100);
+        return '<div style="display:flex;align-items:center;gap:9px;margin:7px 0;">'
+          + '<div style="font-size:12px;font-weight:700;min-width:80px;color:var(--mid);">' + c.code + '</div>'
+          + '<div style="flex:1;"><div class="pb"><div class="pf" style="width:' + w + '%;background:var(--mint);"></div></div></div>'
+          + '<div style="font-size:12px;font-weight:700;color:var(--mint);">' + c.avg + '분</div></div>';
+      }).join('')
+    : '<p style="color:var(--lt);font-size:13px;">반 데이터가 없어요</p>';
+
+  /* 미접속 */
+  var inactive = allStudents.filter(function (s) { return s.date !== today; });
+  document.getElementById('ov-inactive').innerHTML = inactive.length
+    ? '<div style="display:flex;flex-wrap:wrap;gap:6px;">'
+      + inactive.map(function (s) {
+          return '<span class="bg bgo" style="cursor:pointer;padding:4px 10px;" onclick="openDrawer(\'' + s.id + '\')">'
+            + s.name + ' (' + s.classCode + ')</span>';
+        }).join('') + '</div>'
+    : '<p style="color:var(--mint);font-size:13px;font-weight:700;">모든 학생이 오늘 접속했어요 🎉</p>';
+}
+
+/* ══════════════════════════════════
+   STUDENTS
+══════════════════════════════════ */
+function renderStudents() {
+  var codes = [];
+  allStudents.forEach(function (s) { if (codes.indexOf(s.classCode) < 0) codes.push(s.classCode); });
+  var sel = document.getElementById('s-class');
+  sel.innerHTML = '<option value="">전체 반</option>'
+    + codes.map(function (c) { return '<option>' + c + '</option>'; }).join('');
+  drawRows(filtered);
+}
+
+function drawRows(list) {
+  var today = new Date().toDateString();
+  document.getElementById('st-body').innerHTML = list.length
+    ? list.map(function (s) {
+        var isT = s.date === today;
+        return '<tr>'
+          + '<td><input type="checkbox" class="rowchk" data-id="' + s.id + '"></td>'
+          + '<td><span style="cursor:pointer;font-weight:700;color:var(--p);" onclick="openDrawer(\'' + s.id + '\')">' + s.name + '</span></td>'
+          + '<td><span class="bg bgp">' + s.classCode + '</span></td>'
+          + '<td><span class="bg bgb">' + s.grade + '</span></td>'
+          + '<td style="font-weight:700;color:' + (isT ? 'var(--p)' : 'var(--lt)') + ';">' + s.min + '분</td>'
+          + '<td>' + s.pomo + '🍅</td>'
+          + '<td style="font-size:12px;color:var(--lt);">' + s.date + '</td>'
+          + '<td><div style="display:flex;gap:4px;">'
+          + '<button class="btn bs bsm" onclick="openDrawer(\'' + s.id + '\')">상세</button>'
+          + '<button class="btn bd bsm" onclick="confirmResetId(\'' + s.id + '\')">초기화</button>'
+          + '</div></td></tr>';
+      }).join('')
+    : '<tr><td colspan="8" style="text-align:center;padding:22px;color:var(--lt);">학생들이 반코드로 입장하면 여기에 나타나요!</td></tr>';
+}
+
+function filterStudents() {
+  var q     = document.getElementById('s-search').value.toLowerCase();
+  var cls   = document.getElementById('s-class').value;
+  var grade = document.getElementById('s-grade').value;
+  filtered  = allStudents.filter(function (s) {
+    return (!q     || s.name.toLowerCase().indexOf(q) > -1)
+        && (!cls   || s.classCode === cls)
+        && (!grade || s.grade === grade);
+  });
+  drawRows(filtered);
+}
+
+function toggleAll() {
+  var all = document.getElementById('chk-all').checked;
+  document.querySelectorAll('.rowchk').forEach(function (c) { c.checked = all; });
+}
+
+/* ══════════════════════════════════
+   DRAWER (상세 + 수정)
+══════════════════════════════════ */
+function openDrawer(id) {
+  currentSt = allStudents.find(function (s) { return s.id === id; });
+  if (!currentSt) return;
+  var s     = currentSt;
+  var today = new Date().toDateString();
+
+  document.getElementById('dr-name').textContent = s.name;
+  document.getElementById('dr-meta').textContent = s.classCode + ' 반 · ' + s.grade;
+  document.getElementById('edit-min').value  = s.min;
+  document.getElementById('edit-pomo').value = s.pomo;
+
+  document.getElementById('dr-today').innerHTML =
+    '<div class="ir"><span class="ik">⏱ 오늘 공부 시간</span><span class="iv" style="color:var(--p);">' + s.min + '분</span></div>'
+    + '<div class="ir"><span class="ik">🍅 뽀모도로</span><span class="iv">' + s.pomo + '개</span></div>'
+    + '<div class="ir"><span class="ik">📅 마지막 접속</span><span class="iv">' + s.date + '</span></div>'
+    + '<div class="ir"><span class="ik">📊 상태</span><span class="iv">'
+    + (s.date === today ? '<span class="bg bgm">오늘 접속</span>' : '<span class="bg bgo">미접속</span>')
+    + '</span></div>';
+
+  /* LocalStorage에서 해당 학생 데이터 읽기 (같은 기기일 때만 가능) */
+  var lsData = null;
+  try { lsData = JSON.parse(localStorage.getItem('soslab_v4') || 'null'); } catch (e) {}
+  var isMe   = lsData && lsData.user && lsData.user.name === s.name;
+
+  document.getElementById('dr-goals').innerHTML = isMe
+    ? '<div class="ir"><span class="ik">🌠 장래 희망</span><span class="iv">' + (lsData.user.dream || '진로 탐색 중') + '</span></div>'
+      + '<div class="ir"><span class="ik">📅 이번 달 목표</span><span class="iv">' + (lsData.user.monthlyGoal || '-') + '</span></div>'
+      + '<div class="ir"><span class="ik">📆 이번 주 목표</span><span class="iv">' + (lsData.user.weeklyGoal || '-') + '</span></div>'
+    : '<p style="font-size:12px;color:var(--lt);">이 기기의 학생 데이터에 접근할 수 없어요<br>(학생 본인 기기에서만 확인 가능)</p>';
+
+  var subjs = isMe && lsData.subjects ? lsData.subjects : [];
+  document.getElementById('dr-subjects').innerHTML = subjs.length
+    ? '<div style="display:flex;flex-wrap:wrap;gap:5px;">' + subjs.map(function (s) { return '<span class="bg bgp">' + s.emoji + ' ' + s.name + '</span>'; }).join('') + '</div>'
+    : '<p style="font-size:12px;color:var(--lt);">등록 과목 없음</p>';
+
+  var journals = isMe && lsData.journals ? lsData.journals.slice(0, 3) : [];
+  document.getElementById('dr-journals').innerHTML = journals.length
+    ? journals.map(function (j) {
+        return '<div style="background:#faf8ff;border-radius:9px;padding:9px 11px;margin:5px 0;">'
+          + '<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;">'
+          + '<span style="font-size:15px;">' + (j.mood ? j.mood.emoji : '📔') + '</span>'
+          + '<span style="font-size:12px;font-weight:600;">' + j.date + '</span>'
+          + '<span style="font-size:11px;color:var(--lt);">' + (j.rating ? '⭐'.repeat(j.rating) : '') + '</span>'
+          + '<span class="bg bgm" style="margin-left:auto;">' + (j.studyMin || 0) + '분</span></div>'
+          + (j.content ? '<p style="font-size:12px;color:var(--mid);line-height:1.5;">' + j.content + '</p>' : '')
+          + '</div>';
+      }).join('')
+    : '<p style="font-size:12px;color:var(--lt);">성찰 일지 없음</p>';
+
+  document.getElementById('drawer-ov').style.display = 'flex';
+}
+
+function closeDrawer() { document.getElementById('drawer-ov').style.display = 'none'; currentSt = null; }
+
+/* ── 공부 시간 수정 ── */
+function saveStudentEdit() {
+  if (!currentSt) return;
+  var newMin  = parseInt(document.getElementById('edit-min').value)  || 0;
+  var newPomo = parseInt(document.getElementById('edit-pomo').value) || 0;
+  try {
+    var key     = 'classdata_' + currentSt.classCode;
+    var members = JSON.parse(localStorage.getItem(key) || '[]');
+    var idx     = members.findIndex(function (m) { return m.name === currentSt.name; });
+    if (idx > -1) { members[idx].min = newMin; members[idx].pomo = newPomo; localStorage.setItem(key, JSON.stringify(members)); }
+  } catch (e) {}
+  currentSt.min  = newMin;
+  currentSt.pomo = newPomo;
+  var si = allStudents.findIndex(function (s) { return s.id === currentSt.id; });
+  if (si > -1) { allStudents[si].min = newMin; allStudents[si].pomo = newPomo; }
+  document.getElementById('dr-today').querySelector('.iv').textContent = newMin + '분';
+  drawRows(filtered); renderOverview();
+  toast('✅ ' + currentSt.name + ' 학생 기록이 수정됐어요!');
+}
+
+/* ── 초기화 ── */
+function confirmResetCurrent() {
+  if (!currentSt) return;
+  showModal('데이터를 초기화할까요?',
+    currentSt.name + ' 학생의 오늘 공부 기록이 0으로 초기화돼요.',
+    function () { resetById(currentSt.id); closeDrawer(); });
+}
+function confirmResetId(id) {
+  var s = allStudents.find(function (x) { return x.id === id; });
+  if (!s) return;
+  showModal('데이터를 초기화할까요?', s.name + ' 학생의 오늘 공부 기록이 0으로 초기화돼요.', function () { resetById(id); });
+}
+function confirmBulkReset() {
+  var checked = document.querySelectorAll('.rowchk:checked');
+  if (!checked.length) { toast('⚠️ 초기화할 학생을 선택해주세요!'); return; }
+  showModal(checked.length + '명 초기화할까요?', '선택한 모든 학생의 오늘 기록이 초기화돼요.',
+    function () { checked.forEach(function (c) { resetById(c.dataset.id, true); }); closeModal(); toast('✅ ' + checked.length + '명 초기화 완료!'); drawRows(filtered); renderOverview(); });
+}
+function resetById(id, silent) {
+  var s = allStudents.find(function (x) { return x.id === id; });
+  if (!s) return;
+  try {
+    var key     = 'classdata_' + s.classCode;
+    var members = JSON.parse(localStorage.getItem(key) || '[]');
+    var idx     = members.findIndex(function (m) { return m.name === s.name; });
+    if (idx > -1) { members[idx].min = 0; members[idx].pomo = 0; localStorage.setItem(key, JSON.stringify(members)); }
+  } catch (e) {}
+  s.min = 0; s.pomo = 0;
+  if (!silent) { closeModal(); toast('🗑 ' + s.name + ' 학생 데이터가 초기화됐어요!'); drawRows(filtered); renderOverview(); }
+}
+
+/* ══════════════════════════════════
+   CLASS TAB
+══════════════════════════════════ */
+function renderClassTab() {
+  var codes = [];
+  allStudents.forEach(function (s) { if (codes.indexOf(s.classCode) < 0) codes.push(s.classCode); });
+  /* 관리자가 등록한 반코드도 포함 */
+  getClassCodes().forEach(function (c) { if (codes.indexOf(c.code) < 0) codes.push(c.code); });
+  var el = document.getElementById('cl-btns');
+  el.innerHTML = codes.map(function (c) {
+    return '<button class="btn bs" style="padding:6px 14px;font-size:13px;" onclick="showClass(\'' + c + '\')">' + c + '</button>';
+  }).join('');
+  if (codes.length) showClass(codes[0]);
+}
+
+function showClass(code) {
+  var members = allStudents.filter(function (s) { return s.classCode === code; });
+  var today   = new Date().toDateString();
+  var active  = members.filter(function (m) { return m.date === today; });
+  var avgMin  = active.length ? Math.round(active.reduce(function (a, m) { return a + (m.min || 0); }, 0) / active.length) : 0;
+  var sorted  = members.slice().sort(function (a, b) { return (b.min || 0) - (a.min || 0); });
+  var maxM    = sorted.length ? (sorted[0].min || 1) : 1;
+  var medals  = ['🥇', '🥈', '🥉'];
+
+  /* 반 이름 가져오기 */
+  var codeInfo = getClassCodes().find(function (c) { return c.code === code; });
+  var codeName = codeInfo ? codeInfo.name : code;
+
+  document.getElementById('cl-detail').innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:13px;">'
+    + '<div class="sc" style="--c:var(--p);"><div class="sn">' + members.length + '</div><div class="sl">전체 인원</div></div>'
+    + '<div class="sc" style="--c:var(--mint);"><div class="sn">' + active.length + '</div><div class="sl">오늘 접속</div></div>'
+    + '<div class="sc" style="--c:var(--coral);"><div class="sn">' + avgMin + '분</div><div class="sl">오늘 평균</div></div>'
+    + '<div class="sc" style="--c:var(--blue);"><div class="sn">' + (members.length - active.length) + '</div><div class="sl">미접속</div></div>'
+    + '</div>'
+    + '<div class="card"><div class="ct">👥 ' + code + ' (' + codeName + ') 학생 현황</div>'
+    + (sorted.length ? sorted.map(function (s, i) {
+        var isT = s.date === today; var bw = Math.round((s.min || 0) / maxM * 100);
+        return '<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--bdr);">'
+          + '<div style="width:26px;font-size:14px;text-align:center;">' + (i < 3 ? medals[i] : (i + 1)) + '</div>'
+          + '<div style="flex:1;"><div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">'
+          + '<span style="font-size:13px;font-weight:700;">' + s.name + '</span>'
+          + '<span class="bg ' + (isT ? 'bgm' : 'bgo') + '">' + (isT ? '접속' : '미접속') + '</span></div>'
+          + '<div class="pb"><div class="pf" style="width:' + bw + '%;"></div></div></div>'
+          + '<div style="text-align:right;min-width:55px;">'
+          + '<div style="font-size:14px;font-weight:900;color:var(--p);">' + s.min + '분</div>'
+          + '<div style="font-size:11px;color:var(--lt);">🍅' + s.pomo + '</div></div>'
+          + '<button class="btn bd bsm" onclick="confirmResetId(\'' + s.id + '\')">초기화</button>'
+          + '</div>';
+      }).join('') : '<p style="color:var(--lt);font-size:13px;text-align:center;padding:16px;">아직 이 반에 참여한 학생이 없어요</p>')
+    + '</div>';
+}
+
+/* ══════════════════════════════════
+   CSV
+══════════════════════════════════ */
+function exportCSV() {
+  var rows = [['이름', '반코드', '학교급', '오늘공부(분)', '뽀모도로', '날짜']];
+  filtered.forEach(function (s) { rows.push([s.name, s.classCode, s.grade, s.min, s.pomo, s.date]); });
+  var csv  = rows.map(function (r) { return r.join(','); }).join('\n');
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var a    = document.createElement('a');
+  a.href   = URL.createObjectURL(blob);
+  a.download = 'soslab_' + new Date().toLocaleDateString('ko-KR').replace(/\./g, '').replace(/ /g, '') + '.csv';
+  a.click();
+  toast('📥 CSV가 다운로드됐어요!');
+}
+
+/* ══════════════════════════════════
+   TABS
+══════════════════════════════════ */
+function switchTab(name, btn) {
+  ['ov', 'codes', 'st', 'cl'].forEach(function (t) {
+    document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(function (b) { b.classList.remove('on'); });
+  if (btn) btn.classList.add('on');
+  if (name === 'st')    renderStudents();
+  if (name === 'cl')    renderClassTab();
+  if (name === 'codes') renderCodeList();
+}
+
+/* ══════════════════════════════════
+   MODAL
+══════════════════════════════════ */
+function showModal(title, desc, cb) {
+  document.getElementById('m-title').textContent = title;
+  document.getElementById('m-desc').textContent  = desc;
+  modalCb = cb;
+  document.getElementById('m-ok').onclick = function () { if (modalCb) modalCb(); };
+  document.getElementById('confirm-mov').style.display = 'flex';
+}
+function closeModal() { document.getElementById('confirm-mov').style.display = 'none'; modalCb = null; }
+
+/* ══════════════════════════════════
+   TOAST
+══════════════════════════════════ */
+function toast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block';
+  setTimeout(function () { t.style.display = 'none'; }, 2800);
+}
+
+/* ══════════════════════════════════
+   AUTO LOGIN
+══════════════════════════════════ */
+window.onload = function () {
+  initAdminFirebase(); // Firebase 먼저 초기화
+  var saved = sessionStorage.getItem('adm');
+  if (saved) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display    = 'block';
+    loadData();
+  } else {
+    document.getElementById('pw').focus();
+  }
+};
+
+/* ════ FIREBASE 연동 ════ */
+// ★ index.html과 동일한 Firebase 설정값을 여기에도 붙여넣으세요 ★
+var FIREBASE_CONFIG_ADMIN = {
+  apiKey:            "AIzaSyCRj3kjGQVFB2kkeNesKwSZagB8Yq835ok",
+  authDomain:        "soslab.firebaseapp.com",
+  databaseURL:       "https://soslab-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "soslab",
+  storageBucket:     "soslab.appspot.com",
+  messagingSenderId: "123456789",
+  appId:             "1:123:web:abc"
+};
+var adminDb = null;
+
+function initAdminFirebase() {
+  try {
+    if (typeof firebase === 'undefined') return;
+    if (FIREBASE_CONFIG_ADMIN.apiKey === 'YOUR_API_KEY') return;
+    // 이미 초기화됐으면 재사용
+    var app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(FIREBASE_CONFIG_ADMIN, 'admin');
+    if (typeof firebase.database !== 'undefined') {
+      adminDb = firebase.database(app);
+      console.log('✅ 관리자 Firebase 연결됨');
+    }
+  } catch(e) { console.log('Admin Firebase init:', e.message); }
+}
+</script>
+</body>
+</html>
